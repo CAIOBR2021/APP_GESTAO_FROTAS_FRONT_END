@@ -1,0 +1,10 @@
+/* sgrm-frontend/src/index.css */
+body {
+  background-color: #e9ecef; /* Um cinza bem claro para o fundo */
+}
+
+/* Deixa os tooltips (dicas) com uma aparência melhor */
+.tooltip-inner {
+  background-color: #343a40; /* Fundo escuro */
+  color: white;
+}
