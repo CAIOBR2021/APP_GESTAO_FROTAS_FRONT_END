@@ -83,11 +83,14 @@ function App() {
     fetchDeliveries();
   };
 
+  // --- CORREÇÃO APLICADA AQUI ---
   const sortedAndFilteredDeliveries = useMemo(() => {
     return deliveries
-      .filter((d) => d.data_hora_solicitacao.startsWith(filterDate))
+      // Garante que a comparação seja feita apenas com a parte da data (YYYY-MM-DD)
+      .filter((d) => d.data_hora_solicitacao.substring(0, 10) === filterDate)
       .sort((a, b) => new Date(a.data_hora_solicitacao).getTime() - new Date(b.data_hora_solicitacao).getTime());
   }, [deliveries, filterDate]);
+  // --- FIM DA CORREÇÃO ---
 
   const formSuggestions = useMemo(() => {
     const origens = [...new Set(deliveries.map(d => d.local_armazenagem))];
@@ -194,7 +197,6 @@ function App() {
                 </h2>
               </Col>
               <Col md={6} className="d-flex justify-content-end">
-                {/* A CORREÇÃO ESTÁ AQUI */}
                 <Form.Group controlId="filterDate" className="me-2" style={{ width: '180px' }}>
                   <Form.Control type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
                 </Form.Group>

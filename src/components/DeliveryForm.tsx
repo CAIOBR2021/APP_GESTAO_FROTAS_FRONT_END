@@ -73,7 +73,15 @@ export function DeliveryForm({ onSave, deliveryToEdit, onCancelEdit, suggestions
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const entregaParaSalvar = { ...formData, data_hora_solicitacao: `${formDate}T${formTime}:00Z` };
+    
+    // --- CORREÇÃO APLICADA AQUI ---
+    // Removemos o 'Z' para tratar a hora como local e não como UTC.
+    const entregaParaSalvar = { 
+      ...formData, 
+      data_hora_solicitacao: `${formDate}T${formTime}:00` 
+    };
+    // --- FIM DA CORREÇÃO ---
+
     const url = isEditing ? `${API_URL}/entregas/${deliveryToEdit!.id}` : `${API_URL}/entregas`;
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -128,7 +136,6 @@ export function DeliveryForm({ onSave, deliveryToEdit, onCancelEdit, suggestions
             </FloatingLabel>
           </Col>
           <Col md={3}>
-            {/* CORREÇÃO APLICADA AQUI: 'Group' foi trocado por 'Form.Group' e a tag foi fechada */}
             <Form.Group>
               <FloatingLabel label="Quantidade">
                 <Form.Control type="number" required name="item_quantidade" value={formData.item_quantidade || ''} onChange={handleChange} placeholder=" " min="1"/>
