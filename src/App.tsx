@@ -85,10 +85,22 @@ function App() {
 
   // --- CORREÇÃO APLICADA AQUI ---
   const sortedAndFilteredDeliveries = useMemo(() => {
-    return deliveries
-      // Garante que a comparação seja feita apenas com a parte da data (YYYY-MM-DD)
-      .filter((d) => d.data_hora_solicitacao.substring(0, 10) === filterDate)
-      .sort((a, b) => new Date(a.data_hora_solicitacao).getTime() - new Date(b.data_hora_solicitacao).getTime());
+    const filtered = deliveries
+      .filter((d) => d.data_hora_solicitacao.substring(0, 10) === filterDate);
+      
+    // Ordenação com dois critérios
+    return filtered.sort((a, b) => {
+      // Critério 1: Ordenar por data e hora
+      const timeA = new Date(a.data_hora_solicitacao).getTime();
+      const timeB = new Date(b.data_hora_solicitacao).getTime();
+      
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      
+      // Critério 2: Se a hora for a mesma, ordenar pelo ID (o item mais novo fica por último)
+      return a.id! - b.id!;
+    });
   }, [deliveries, filterDate]);
   // --- FIM DA CORREÇÃO ---
 
@@ -132,7 +144,7 @@ function App() {
     const tableHead = [['Nº', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem', 'Responsável', 'Telefone']];
     const tableBody = deliveriesForReport.map((delivery, index) => [
       index + 1,
-      new Date(delivery.data_hora_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      new Date(delivery.data_hora_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }),
       delivery.local_obra,
       delivery.item_nome,
       delivery.item_quantidade,
