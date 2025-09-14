@@ -56,7 +56,7 @@ function App() {
   useEffect(() => {
     fetchDeliveries();
   }, []);
-  
+
   useEffect(() => {
     setSelectedIds([]);
   }, [filterDate]);
@@ -83,26 +83,21 @@ function App() {
     fetchDeliveries();
   };
 
-  // --- CORREÇÃO APLICADA AQUI ---
   const sortedAndFilteredDeliveries = useMemo(() => {
     const filtered = deliveries
       .filter((d) => d.data_hora_solicitacao.substring(0, 10) === filterDate);
-      
-    // Ordenação com dois critérios
+
     return filtered.sort((a, b) => {
-      // Critério 1: Ordenar por data e hora
       const timeA = new Date(a.data_hora_solicitacao).getTime();
       const timeB = new Date(b.data_hora_solicitacao).getTime();
-      
+
       if (timeA !== timeB) {
         return timeA - timeB;
       }
-      
-      // Critério 2: Se a hora for a mesma, ordenar pelo ID (o item mais novo fica por último)
+
       return a.id! - b.id!;
     });
   }, [deliveries, filterDate]);
-  // --- FIM DA CORREÇÃO ---
 
   const formSuggestions = useMemo(() => {
     const origens = [...new Set(deliveries.map(d => d.local_armazenagem))];
@@ -123,6 +118,17 @@ function App() {
     setSelectedIds(isChecked ? sortedAndFilteredDeliveries.map(d => d.id!) : []);
   };
 
+  // Funçâo para formatar o telefone
+  const formatPhoneNumber = (value: string) => {
+    if (!value) return "";
+    const cleanedValue = value.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
+    const match = cleanedValue.match(/^(\d{2})(\d{5})(\d{4})$/);
+    if (match) {
+        return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return value;
+  };
+
   const handleGenerateReport = () => {
     if (selectedIds.length === 0) {
       alert('Por favor, selecione ao menos uma entrega para gerar o relatório.');
@@ -134,7 +140,9 @@ function App() {
       .sort((a, b) => new Date(a.data_hora_solicitacao).getTime() - new Date(b.data_hora_solicitacao).getTime());
 
     const doc = new jsPDF('l', 'mm', 'a4');
-    const reportDate = new Date(`${filterDate}T12:00:00`).toLocaleDateString('pt-BR');
+
+    const [year, month, day] = filterDate.split('-');
+    const reportDate = `${day}/${month}/${year}`;
 
     doc.setFontSize(16);
     doc.text('Programação de Caminhões para Entrega de Materiais', 14, 15);
@@ -144,14 +152,17 @@ function App() {
     const tableHead = [['Nº', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem', 'Responsável', 'Telefone']];
     const tableBody = deliveriesForReport.map((delivery, index) => [
       index + 1,
-      new Date(delivery.data_hora_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }),
+      new Date(delivery.data_hora_solicitacao).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
       delivery.local_obra,
       delivery.item_nome,
       delivery.item_quantidade,
       delivery.item_unidade_medida,
       delivery.local_armazenagem,
       delivery.responsavel_nome || '',
-      delivery.responsavel_telefone || '',
+      formatPhoneNumber(delivery.responsavel_telefone || ''), // Aplica a formatação no relatório
     ]);
 
     autoTable(doc, {
@@ -163,14 +174,22 @@ function App() {
     });
 
     const finalY = (doc as any).lastAutoTable.finalY;
-    const linhaY = finalY + 20;
-    const textoY = linhaY + 5;
 
-    doc.line(doc.internal.pageSize.getWidth() / 2 - 50, linhaY, doc.internal.pageSize.getWidth() / 2 + 50, linhaY);
+    // Assinatura do Motorista
+    const linhaYMotorista = finalY + 20;
+    const textoYMotorista = linhaYMotorista + 5;
+    doc.line(doc.internal.pageSize.getWidth() / 2 - 50, linhaYMotorista, doc.internal.pageSize.getWidth() / 2 + 50, linhaYMotorista);
     doc.setFontSize(10);
-    doc.text('Assinatura do Motorista', doc.internal.pageSize.getWidth() / 2, textoY, { align: 'center' });
+    doc.text('Assinatura do Motorista', doc.internal.pageSize.getWidth() / 2, textoYMotorista, { align: 'center' });
 
-    doc.save(`Programacao-Diaria-${reportDate}.pdf`);
+    // Assinatura do Solicitante
+    const linhaYSolicitante = linhaYMotorista + 25;
+    const textoYSolicitante = linhaYSolicitante + 5;
+    doc.line(doc.internal.pageSize.getWidth() / 2 - 50, linhaYSolicitante, doc.internal.pageSize.getWidth() / 2 + 50, linhaYSolicitante);
+    doc.setFontSize(10);
+    doc.text('Assinatura do Solicitante', doc.internal.pageSize.getWidth() / 2, textoYSolicitante, { align: 'center' });
+
+    doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
   };
 
   return (
@@ -236,4 +255,3 @@ function App() {
 }
 
 export default App;
-
